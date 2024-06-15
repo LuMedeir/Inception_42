@@ -1,0 +1,77 @@
+networks:
+  inception:
+
+volumes:
+  mariadb_volume:
+    name: mariadb_volume
+    driver_opts:
+      o: bind
+      type: none
+      device: ${VOLUMES_PATH}/mariadb
+
+  wordpress_volume:
+    name: wordpress_volume
+    driver_opts:
+      o: bind
+      type: none
+      device: ${VOLUMES_PATH}/wordpress
+
+services:
+  mariadb:
+    container_name: mariadb
+    build:
+      context: requirements/mariadb
+      args:
+        - WORDPRESS_DATABASE=${WORDPRESS_DATABASE}
+        - WORDPRESS_USER=${WORDPRESS_USER}
+        - WORDPRESS_PASSWORD=${WORDPRESS_PASSWORD}
+    environment:
+      - WORDPRESS_DATABASE
+      - WORDPRESS_USER
+      - WORDPRESS_PASSWORD
+    restart: on-failure
+    volumes:
+      - mariadb_volume:/var/lib/mysql
+    env_file:
+      - .env
+    networks:
+      - inception
+    expose:
+      - 3306
+
+  wordpress:
+    container_name: wordpress
+    build:
+      context: requirements/wordpress
+      args:
+        - WORDPRESS_DATABASE=${WORDPRESS_DATABASE}
+        - WORDPRESS_USER=${WORDPRESS_USER}
+        - WORDPRESS_PASSWORD=${WORDPRESS_PASSWORD}
+    restart: on-failure
+    env_file:
+      - .env
+    volumes:
+      - wordpress_volume:/var/www/html
+    depends_on:
+      - mariadb
+    networks:
+      - inception
+    expose:
+      - 9000
+
+  nginx:
+    container_name: nginx
+    build:
+      context: requirements/nginx
+    restart: on-failure
+    ports:
+      - 443:443
+    depends_on:
+      - wordpress
+      - redis
+      - mariadb
+    networks:
+      - inception
+    volumes:
+      - wordpress_volume:/var/www/html
+
