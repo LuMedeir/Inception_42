@@ -19,33 +19,20 @@ host-clean:
 DOCKER_COMPOSE_FILE=./srcs/docker-compose.yml
 DOCKER_COMPOSE_COMMAND=docker-compose -f $(DOCKER_COMPOSE_FILE)
 
+# inicia os contêineres em segundo plano
 up: build
 	$(DOCKER_COMPOSE_COMMAND) up -d
 
+# constrói as imagens Docker 
 build:
 	$(DOCKER_COMPOSE_COMMAND) build
 
-build-no-cache:
-	$(DOCKER_COMPOSE_COMMAND) build --no-cache
 
-down:
-	$(DOCKER_COMPOSE_COMMAND) down
-
-ps:
-	$(DOCKER_COMPOSE_COMMAND) ps
-
-ls:
-	docker volume ls
-
+# down: Para e remove os contêineres, redes e volumes criados pelo docker-compose up.
+# --rmi all: Remove todas as imagens associadas aos serviços no arquivo docker-compose.
+# --volumes: Remove todos os volumes associados aos contêineres.
 clean: host-clean
 	$(DOCKER_COMPOSE_COMMAND) down --rmi all --volumes
-
-reset:
-	docker stop $$(docker ps -qa)
-	docker rm $$(docker ps -qa)
-	docker rmi -f $$(docker images -qa)
-	docker volume rm $$(docker volume ls -q)
-	docker network rm $$(docker network ls -q) 2>/dev/null
 
 fclean: clean
 	docker system prune --force --all --volumes
@@ -61,8 +48,6 @@ update:
 			@echo "${YELLOW}-----Updating System----${NC}"
 			sudo apt -y update && sudo apt -y upgrade
 			@if [ $$? -eq 0 ]; then \
-				echo "${GREEN}-----System updated-----${NC}"; \
-				echo "${YELLOW}-----Installing Docker-----${NC}"; \
 				sudo apt -y install docker.io && sudo apt -y install docker-compose; \
 				if [ $$? -eq 0 ]; then \
 					echo "${GREEN}-----Docker and docker-compose installed-----${NC}"; \
@@ -83,5 +68,4 @@ compose:
 			sudo mv /home/${SYSTEM_USER}/.docker/cli-plugins/docker-compose /usr/local/lib/docker/cli-plugins/docker-compose
 			@echo "${GREEN}-----Docker Compose updated-----${NC}"
 
-.PHONY: all up build build-no-cache down ps ls clean fclean setup host update compose prepare
-
+.PHONY: all up build clean fclean setup host update compose prepare
