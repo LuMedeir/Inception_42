@@ -1,8 +1,14 @@
+# Definition of networks used by the services.
 networks:
   inception:
+    # Network named "inception" to connect all services.
+    # This network will be automatically created by Docker Compose.
 
+# Definition of volumes used by the services.
 volumes:
   mariadb_volume:
+    # Volume named "mariadb_volume" for MariaDB data persistence.
+    # Configured with a bind mount to a specific host directory.
     name: mariadb_volume
     driver_opts:
       o: bind
@@ -10,67 +16,72 @@ volumes:
       device: ${VOLUMES_PATH}/mariadb
 
   wordpress_volume:
+    # Volume named "wordpress_volume" for Wordpress data persistence.
+    # Configured with a bind mount to a specific host directory.
     name: wordpress_volume
     driver_opts:
       o: bind
       type: none
       device: ${VOLUMES_PATH}/wordpress
 
+# Definition of services (containers) to be run.
 services:
   mariadb:
+    # MariaDB Service
     container_name: mariadb
     build:
-      context: requirements/mariadb
+      context: requirements/mariadb  # Directory where the MariaDB Dockerfile is located.
       args:
-        - WORDPRESS_DATABASE=${WORDPRESS_DATABASE}
+        - WORDPRESS_DATABASE=${WORDPRESS_DATABASE}  # Arguments passed to the MariaDB build.
         - WORDPRESS_USER=${WORDPRESS_USER}
         - WORDPRESS_PASSWORD=${WORDPRESS_PASSWORD}
     environment:
-      - WORDPRESS_DATABASE
+      - WORDPRESS_DATABASE  # Environment variables required by MariaDB.
       - WORDPRESS_USER
       - WORDPRESS_PASSWORD
-    restart: on-failure
+    restart: on-failure  # Defines the container's restart policy in case of failures.
     volumes:
-      - mariadb_volume:/var/lib/mysql
+      - mariadb_volume:/var/lib/mysql  # Mounting mariadb_volume to /var/lib/mysql inside the container.
     env_file:
-      - .env
+      - .env  # Loads environment variables from the .env file.
     networks:
-      - inception
+      - inception  # Connects this service to the "inception" network for communication with other services.
     expose:
-      - 3306
+      - 3306  # Exposes port 3306 to allow external connections to MariaDB.
 
   wordpress:
+    # Wordpress Service
     container_name: wordpress
     build:
-      context: requirements/wordpress
+      context: requirements/wordpress  # Directory where the Wordpress Dockerfile is located.
       args:
-        - WORDPRESS_DATABASE=${WORDPRESS_DATABASE}
+        - WORDPRESS_DATABASE=${WORDPRESS_DATABASE}  # Arguments passed to the Wordpress build.
         - WORDPRESS_USER=${WORDPRESS_USER}
         - WORDPRESS_PASSWORD=${WORDPRESS_PASSWORD}
-    restart: on-failure
+    restart: on-failure  # Defines the container's restart policy in case of failures.
     env_file:
-      - .env
+      - .env  # Loads environment variables from the .env file.
     volumes:
-      - wordpress_volume:/var/www/html
+      - wordpress_volume:/var/www/html  # Mounting wordpress_volume to /var/www/html inside the container.
     depends_on:
-      - mariadb
+      - mariadb  # Specifies that this service depends on the mariadb service and will wait for its startup.
     networks:
-      - inception
+      - inception  # Connects this service to the "inception" network for communication with other services.
     expose:
-      - 9000
+      - 9000  # Exposes port 9000 to allow external connections to Wordpress.
 
   nginx:
+    # Nginx Service
     container_name: nginx
     build:
-      context: requirements/nginx
-    restart: on-failure
+      context: requirements/nginx  # Directory where the Nginx Dockerfile is located.
+    restart: on-failure  # Defines the container's restart policy in case of failures.
     ports:
-      - 443:443
+      - 443:443  # Maps port 443 of the host to port 443 of the container.
     depends_on:
-      - wordpress
-      - mariadb
+      - wordpress  # Specifies that this service depends on the wordpress service and will wait for its startup.
+      - mariadb  # Specifies that this service depends on the mariadb service and will wait for its startup.
     networks:
-      - inception
+      - inception  # Connects this service to the "inception" network for communication with other services.
     volumes:
-      - wordpress_volume:/var/www/html
-
+      - wordpress_volume:/var/www/html  # Mounting wordpress_volume to /var/www/html inside the container.
