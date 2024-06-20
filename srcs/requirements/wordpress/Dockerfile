@@ -21,7 +21,7 @@ RUN wget -O /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh
 # Cria o diretório onde o php-fpm irá armazenar o arquivo pid
 RUN mkdir /run/php
 
-# Define as permissões adequadas para o diretório /var/www/html
+# Define as permissões do diretório /var/www/html para garantir que ele seja acessível e seguro para o servidor web (Nginx) dentro do container.
 RUN chown -R www-data:www-data /var/www/html \
 	&& chmod 755 /var/www/html
 
