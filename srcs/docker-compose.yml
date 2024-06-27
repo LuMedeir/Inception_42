@@ -1,13 +1,8 @@
 networks:
   inception:
-    # Rede nomeada "inception" para conectar todos os serviços.
-    # Esta rede será criada automaticamente pelo Docker Compose.
 
-# Definição dos volumes utilizados pelos serviços.
 volumes:
   mariadb_volume:
-    # Volume nomeado "mariadb_volume" para persistência de dados do MariaDB.
-    # Configurado com um bind mount para um diretório específico do host.
     name: mariadb_volume
     driver_opts:
       o: bind
@@ -15,72 +10,67 @@ volumes:
       device: ${VOLUMES_PATH}/mariadb
 
   wordpress_volume:
-    # Volume nomeado "wordpress_volume" para persistência de dados do Wordpress.
-    # Configurado com um bind mount para um diretório específico do host.
     name: wordpress_volume
     driver_opts:
       o: bind
       type: none
       device: ${VOLUMES_PATH}/wordpress
 
-# Definição dos serviços (containers) a serem executados.
 services:
   mariadb:
-    # Serviço MariaDB
     container_name: mariadb
     build:
-      context: requirements/mariadb  # Diretório onde está localizado o Dockerfile do MariaDB.
+      context: requirements/mariadb
       args:
-        - WORDPRESS_DATABASE=${WORDPRESS_DATABASE}  # Argumentos passados para o build do MariaDB.
+        - WORDPRESS_DATABASE=${WORDPRESS_DATABASE}
         - WORDPRESS_USER=${WORDPRESS_USER}
         - WORDPRESS_PASSWORD=${WORDPRESS_PASSWORD}
     environment:
-      - WORDPRESS_DATABASE  # Variáveis de ambiente necessárias pelo MariaDB.
+      - WORDPRESS_DATABASE
       - WORDPRESS_USER
       - WORDPRESS_PASSWORD
-    restart: on-failure  # Define a política de reinício do container em caso de falhas.
+    restart: on-failure
     volumes:
-      - mariadb_volume:/var/lib/mysql  # Monta mariadb_volume em /var/lib/mysql dentro do container.
+      - mariadb_volume:/var/lib/mysql
     env_file:
-      - .env  # Carrega variáveis de ambiente do arquivo .env.
+      - .env
     networks:
-      - inception  # Conecta este serviço à rede "inception" para comunicação com outros serviços.
+      - inception
     expose:
-      - 3306  # Expõe a porta 3306 para permitir conexões externas ao MariaDB, a porta 3306 é a porta padrão utilizada pelo MariaDB para aceitar conexões de clientes.
+      - 3306
 
   wordpress:
-    # Serviço Wordpress
     container_name: wordpress
     build:
-      context: requirements/wordpress  # Diretório onde está localizado o Dockerfile do Wordpress.
+      context: requirements/wordpress
       args:
-        - WORDPRESS_DATABASE=${WORDPRESS_DATABASE}  # Argumentos passados para o build do Wordpress.
+        - WORDPRESS_DATABASE=${WORDPRESS_DATABASE}
         - WORDPRESS_USER=${WORDPRESS_USER}
         - WORDPRESS_PASSWORD=${WORDPRESS_PASSWORD}
-    restart: on-failure  # Define a política de reinício do container em caso de falhas.
+    restart: on-failure
     env_file:
-      - .env  # Carrega variáveis de ambiente do arquivo .env.
+      - .env
     volumes:
-      - wordpress_volume:/var/www/html  # Monta wordpress_volume em /var/www/html dentro do container.
+      - wordpress_volume:/var/www/html
     depends_on:
-      - mariadb  # Especifica que este serviço depende do serviço mariadb e esperará pelo seu início.
+      - mariadb
     networks:
-      - inception  # Conecta este serviço à rede "inception" para comunicação com outros serviços.
+      - inception
     expose:
-      - 9000  # Expõe a porta 9000 para permitir conexões externas ao Wordpress, a porta 9000 é frequentemente utilizada.
+      - 9000
 
   nginx:
-    # Serviço Nginx
     container_name: nginx
     build:
-      context: requirements/nginx  # Diretório onde está localizado o Dockerfile do Nginx.
-    restart: on-failure  # Define a política de reinício do container em caso de falhas.
+      context: requirements/nginx
+    restart: on-failure
     ports:
-      - 443:443  # Mapeia a porta 443 do host para a porta 443 do container, porta 443 é a porta padrão usada pelo protocolo HTTPS.
+      - 443:443
     depends_on:
-      - wordpress  # Especifica que este serviço depende do serviço wordpress e esperará pelo seu início.
-      - mariadb  # Especifica que este serviço depende do serviço mariadb e esperará pelo seu início.
+      - wordpress
+      - mariadb
     networks:
-      - inception  # Conecta este serviço à rede "inception" para comunicação com outros serviços.
+      - inception
     volumes:
-      - wordpress_volume:/var/www/html  # Monta wordpress_volume em /var/www/html dentro do container.
+      - wordpress_volume:/var/www/html
+
